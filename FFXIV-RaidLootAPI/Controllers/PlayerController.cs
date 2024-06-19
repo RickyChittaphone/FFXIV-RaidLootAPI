@@ -6,6 +6,7 @@ using FFXIV_RaidLootAPI.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -16,6 +17,7 @@ namespace FFXIV_RaidLootAPI.Controllers
     public class PlayerController : ControllerBase
     {
         private readonly IDbContextFactory<DataContext> _context;
+        private readonly IHubContext<PlayerHub> _playerHubContext;
         private static readonly List<string> ETRO_GEAR_NAME = new List<string> 
         {           
             "weapon",
@@ -32,9 +34,10 @@ namespace FFXIV_RaidLootAPI.Controllers
             "fingerR"
                     };
 
-        public PlayerController(IDbContextFactory<DataContext> context)
+        public PlayerController(IDbContextFactory<DataContext> context, IHubContext<PlayerHub> playerHubContext)
         {
             _context = context;
+            _playerHubContext = playerHubContext;
         }
         // GET
 
@@ -47,6 +50,7 @@ namespace FFXIV_RaidLootAPI.Controllers
                     return NotFound("Player is not found.");
                 player.ResetJobDependantValues();
                 await context.SaveChangesAsync();
+                await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
                 return Ok();
             }
         }
@@ -72,7 +76,7 @@ namespace FFXIV_RaidLootAPI.Controllers
         using (var context = _context.CreateDbContext())
         {
             GetGearListDTO ListGearDTO = new GetGearListDTO();
-            Players? player = context.Players.Find(Id);
+            Players? player = await context.Players.FindAsync(Id);
             if (player is null)
                 return NotFound("Player not found.");
 
@@ -113,6 +117,7 @@ namespace FFXIV_RaidLootAPI.Controllers
                     return NotFound("Player not found.");
                 player.ResetJobDependantValues();
                 await context.SaveChangesAsync();
+                await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
                 return Ok();
             }
         }
@@ -127,6 +132,7 @@ namespace FFXIV_RaidLootAPI.Controllers
                 return NotFound("Player not found");
             player.change_gear_piece(dto.GearToChange, dto.UseBis, dto.NewGearId);
             context.SaveChanges();
+            await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
             return Ok();
         }
         }
@@ -275,7 +281,8 @@ namespace FFXIV_RaidLootAPI.Controllers
             if (player is null)
                 return NotFound("Player not found");
             player.Name = dto.NewName;
-            context.SaveChanges();
+            await context.SaveChangesAsync();
+            await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
             return Ok();
         }
         }
@@ -290,6 +297,7 @@ namespace FFXIV_RaidLootAPI.Controllers
                     return NotFound("Player not found");
                 player.Job = dto.NewJob;
                 context.SaveChanges();
+                await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
                 return Ok();
             }
             }

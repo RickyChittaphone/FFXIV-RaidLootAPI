@@ -3,6 +3,7 @@ import { Player } from '../models/player';
 import { Gear } from '../models/gear';
 import { HttpService } from '../service/http.service'; // Importing the HttpService
 import { ActivatedRoute } from '@angular/router';
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 
 @Component({
   selector: 'app-player-detail',
@@ -16,9 +17,24 @@ export class PlayerDetailComponent {
   @Input({required:true}) player! : Player;
   @ViewChild('etroField') etroInputRef: ElementRef;
 
+  private hubConnection: HubConnection;
+
   constructor(public http: HttpService, private route: ActivatedRoute, public dialog: MatDialog,
               private cdr : ChangeDetectorRef,private staticEventsService: StaticEventsService
   ) { } // Constructor with dependency injection
+
+  ngOnInit() {
+    this.hubConnection = new HubConnectionBuilder()
+      .withUrl('https://localhost:7203/playerhub')
+      .build();
+
+    this.hubConnection.start().catch(err => console.error('Error while starting connection: ' + err))
+
+    this.hubConnection.on('ReceivePlayerInfoUpdate', (updatedPlayer) => {
+      // Update your player data here
+      console.log('Player info updated', updatedPlayer);
+    });
+  }
 
   async onChangeGear(GearType : string, bis : boolean, event: Event){
     const selectElement = event.target as HTMLSelectElement;

@@ -37,7 +37,8 @@ namespace FFXIV_RaidLootAPI.Controllers
         {
             using (var context = _context.CreateDbContext())
             {
-                return Ok(context.Statics.First(s => s.UUID == uuid).Name);
+                Static aStatic = await context.Statics.FirstAsync(s => s.UUID == uuid);
+                return Ok(aStatic.Name);
             }
         }
 

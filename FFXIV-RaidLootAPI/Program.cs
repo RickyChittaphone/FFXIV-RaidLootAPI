@@ -1,4 +1,5 @@
 using FFXIV_RaidLootAPI.Data;
+using FFXIV_RaidLootAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,8 @@ builder.Services.AddDbContextFactory<DataContext>(options =>
 {//DockerConnection
     options.UseSqlServer(builder.Configuration.GetConnectionString("DockerConnection"));
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddCors();
 
@@ -32,6 +35,7 @@ app.UseCors(x =>x
     .AllowAnyMethod()
     .AllowAnyHeader()
     .SetIsOriginAllowed(origin => true) //allow any origin
+    .AllowCredentials()
     );
 using (var scope = app.Services.CreateScope())
 {
@@ -40,6 +44,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseAuthorization();
+
+app.UseRouting();
+
+app.MapHub<PlayerHub>("/playerhub");
 
 app.MapControllers();
 
