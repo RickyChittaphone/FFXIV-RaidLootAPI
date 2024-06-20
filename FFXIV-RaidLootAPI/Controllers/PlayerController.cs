@@ -117,7 +117,8 @@ namespace FFXIV_RaidLootAPI.Controllers
                     return NotFound("Player not found.");
                 player.ResetJobDependantValues();
                 await context.SaveChangesAsync();
-                await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
+                var getStatic = await context.Statics.FirstAsync(s => s.Id == player.staticId);
+                await _playerHubContext.Clients.Group(getStatic.UUID).SendAsync("ReceivePlayerInfoUpdate", player);
                 return Ok();
             }
         }
@@ -132,8 +133,9 @@ namespace FFXIV_RaidLootAPI.Controllers
                 return NotFound("Player not found");
             player.change_gear_piece(dto.GearToChange, dto.UseBis, dto.NewGearId);
             context.SaveChanges();
-            await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
-            return Ok();
+                var getStatic = await context.Statics.FirstAsync(s => s.Id == player.staticId);
+                await _playerHubContext.Clients.Group(getStatic.UUID).SendAsync("ReceivePlayerInfoUpdate", player);
+                return Ok();
         }
         }
 
@@ -282,7 +284,8 @@ namespace FFXIV_RaidLootAPI.Controllers
                 return NotFound("Player not found");
             player.Name = dto.NewName;
             await context.SaveChangesAsync();
-            await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
+            var getStatic = await context.Statics.FirstAsync(s => s.Id == player.staticId);
+            await _playerHubContext.Clients.Group(getStatic.UUID).SendAsync("ReceivePlayerInfoUpdate", player);
             return Ok();
         }
         }
@@ -297,7 +300,8 @@ namespace FFXIV_RaidLootAPI.Controllers
                     return NotFound("Player not found");
                 player.Job = dto.NewJob;
                 context.SaveChanges();
-                await _playerHubContext.Clients.All.SendAsync("ReceivePlayerInfoUpdate", player);
+                var getStatic = await context.Statics.FirstAsync(s => s.Id == player.staticId);
+                await _playerHubContext.Clients.Group(getStatic.UUID).SendAsync("ReceivePlayerInfoUpdate", player);
                 return Ok();
             }
             }
@@ -314,7 +318,9 @@ namespace FFXIV_RaidLootAPI.Controllers
                 return NotFound("Player not found");
             player.Locked = dto.NewLock;
             context.SaveChanges();
-            return Ok();
+                var getStatic = await context.Statics.FirstAsync(s => s.Id == player.staticId);
+                await _playerHubContext.Clients.Group(getStatic.UUID).SendAsync("ReceivePlayerInfoUpdate", player);
+                return Ok();
         }
         }
 

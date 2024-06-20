@@ -18,17 +18,27 @@ export class PlayerDetailComponent {
   @ViewChild('etroField') etroInputRef: ElementRef;
 
   private hubConnection: HubConnection;
+  public uuid: String;
 
   constructor(public http: HttpService, private route: ActivatedRoute, public dialog: MatDialog,
               private cdr : ChangeDetectorRef,private staticEventsService: StaticEventsService
   ) { } // Constructor with dependency injection
 
   ngOnInit() {
+    this.route.params.subscribe(params => {
+      this.uuid = params['uuid'];
+    });
     this.hubConnection = new HubConnectionBuilder()
       .withUrl('https://localhost:7203/playerhub')
       .build();
 
-    this.hubConnection.start().catch(err => console.error('Error while starting connection: ' + err))
+    this.hubConnection.start()
+      .then(() => {
+        console.log('Connection started');
+        this.hubConnection.invoke('AddToGroup', this.uuid);
+      })
+      .catch(err => console.error('Error while starting connection: ' + err))
+
 
     this.hubConnection.on('ReceivePlayerInfoUpdate', (updatedPlayer) => {
       // Update your player data here
